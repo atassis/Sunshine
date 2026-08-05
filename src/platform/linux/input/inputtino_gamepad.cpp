@@ -2,11 +2,6 @@
  * @file src/platform/linux/input/inputtino_gamepad.cpp
  * @brief Definitions for inputtino gamepad input handling.
  */
-// lib includes
-#include <boost/locale.hpp>
-#include <inputtino/input.hpp>
-#include <libevdev/libevdev.h>
-
 // local includes
 #include "inputtino_common.h"
 #include "inputtino_gamepad.h"
@@ -31,7 +26,8 @@ namespace platf::gamepad {
                                              // https://github.com/torvalds/linux/blob/master/drivers/input/joystick/xpad.c#L147
                                              .vendor_id = 0x045E,
                                              .product_id = 0x02EA,
-                                             .version = 0x0408});
+                                             .version = 0x0408,
+                                             .device_phys = get_phys_id()});
   }
 
   auto create_switch() {
@@ -39,7 +35,8 @@ namespace platf::gamepad {
                                             // https://github.com/torvalds/linux/blob/master/drivers/hid/hid-ids.h#L981
                                             .vendor_id = 0x057e,
                                             .product_id = 0x2009,
-                                            .version = 0x8111});
+                                            .version = 0x8111,
+                                            .device_phys = get_phys_id()});
   }
 
   auto create_ds5(int globalIndex) {
@@ -50,7 +47,14 @@ namespace platf::gamepad {
       device_mac = std::format("02:00:00:00:00:{:02x}", globalIndex);
     }
 
-    return inputtino::PS5Joypad::create({.name = "Sunshine PS5 (virtual) pad", .vendor_id = 0x054C, .product_id = 0x0CE6, .version = 0x8111, .device_phys = device_mac, .device_uniq = device_mac});
+    return inputtino::PS5Joypad::create({
+      .name = "Sunshine PS5 (virtual) pad",
+      .vendor_id = 0x054C,
+      .product_id = 0x0CE6,
+      .version = 0x8111,
+      .device_phys = get_phys_id() + "/" + device_mac,
+      .device_uniq = device_mac,
+    });
   }
 
   int alloc(input_raw_t *raw, const gamepad_id_t &id, const gamepad_arrival_t &metadata, feedback_queue_t feedback_queue) {
