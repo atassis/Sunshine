@@ -4,6 +4,10 @@
  */
 #pragma once
 
+#include <climits>
+#include <cstdlib>
+#include <unistd.h>
+
 // lib includes
 #include <boost/locale.hpp>
 #include <inputtino/input.hpp>
@@ -18,6 +22,25 @@
 using namespace std::literals;
 
 namespace platf {
+
+  /**
+   * @brief Get a container-specific physical device identifier for input isolation.
+   * @return String in format "sunshine/<id>" used as phys field for uinput devices,
+   *         where <id> is $SUNSHINE_PHYS_ID or the hostname when unset.
+   */
+  inline const std::string &get_phys_id() {
+    static const std::string id = [] {
+      if (const char *env = std::getenv("SUNSHINE_PHYS_ID"); env && *env) {
+        return std::string("sunshine/") + env;
+      }
+      char hostname[HOST_NAME_MAX + 1] = {};
+      if (gethostname(hostname, sizeof(hostname)) != 0) {
+        hostname[0] = '\0';
+      }
+      return std::string("sunshine/") + hostname;
+    }();
+    return id;
+  }
 
   using joypads_t = std::variant<inputtino::XboxOneJoypad, inputtino::SwitchJoypad, inputtino::PS5Joypad>;
 
@@ -34,12 +57,14 @@ namespace platf {
           .vendor_id = 0xBEEF,
           .product_id = 0xDEAD,
           .version = 0x111,
+          .device_phys = get_phys_id(),
         })),
         keyboard(inputtino::Keyboard::create({
           .name = "Keyboard passthrough",
           .vendor_id = 0xBEEF,
           .product_id = 0xDEAD,
           .version = 0x111,
+          .device_phys = get_phys_id(),
         })),
         gamepads(MAX_GAMEPADS) {
       if (!mouse) {
@@ -70,12 +95,14 @@ namespace platf {
           .vendor_id = 0xBEEF,
           .product_id = 0xDEAD,
           .version = 0x111,
+          .device_phys = get_phys_id(),
         })),
         pen(inputtino::PenTablet::create({
           .name = "Pen passthrough",
           .vendor_id = 0xBEEF,
           .product_id = 0xDEAD,
           .version = 0x111,
+          .device_phys = get_phys_id(),
         })) {
       global = (input_raw_t *) input.get();
       if (!touch) {
